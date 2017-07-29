@@ -6,5 +6,20 @@ STATE_BLK = 2
 STATE_JUMP = 3
 STATE_CHG = 4
 
+ENM_IDLE = 0
+ENM_TOP_PREP = 1
+ENM_TOP_ATK = 2
+ENM_BOT_PREP = 3
+ENM_BOT_ATK = 4
+
+FIST_MAN_SEQ = [ENM_IDLE,
+                ENM_IDLE,
+                ENM_TOP_PREP,
+                ENM_TOP_ATK,
+                ENM_IDLE,
+                ENM_IDLE,
+                ENM_BOT_PREP,
+                ENM_BOT_ATK]
+
 WINDOW_WIDTH = 1600
 WINDOW_HEIGHT = 900

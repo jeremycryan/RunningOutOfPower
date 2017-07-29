@@ -3,7 +3,7 @@ import os
 from Constants import *
 
 class Sprite():
-    def __init__(self, file, framesize, frame_num, screen, player, scale, rev = False):
+    def __init__(self, file, framesize, frame_num, screen, player, scale, rev = False, is_enemy = False):
         self.source = pygame.image.load(os.path.join(file)).convert_alpha()
         self.frame_width = framesize[0]
         self.frame_height = framesize[1]
@@ -15,6 +15,7 @@ class Sprite():
         self.screen = screen
         self.scale = scale
         self.player = player
+        self.is_enemy = is_enemy
 
     def get_frame_rect(self, frame):
         framesize = (self.frame_width, self.frame_height)
@@ -26,6 +27,8 @@ class Sprite():
         if not halt:
             self.curr_frame += 1
         if self.curr_frame > self.frame_num:
+            if not self.is_enemy:
+                self.player.state = STATE_IDLE
             self.curr_frame = 1
 
     def render_frame(self, frame, pos):
@@ -35,7 +38,7 @@ class Sprite():
         position = self.get_frame_rect(frame)
         surface.blit(self.source, (0, 0), position)
         self.remove_trans(surface)
-        surface = pygame.transform.scale(surface, (self.scale, self.scale))
+        surface = pygame.transform.scale(surface, (int(self.scale * self.frame_width/float(self.frame_height)), self.scale))
         self.screen.blit(surface, pos)
 
     def remove_trans(self, img):
