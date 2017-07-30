@@ -23,5 +23,22 @@ FIST_MAN_SEQ = [ENM_IDLE,
                 ENM_BOT_PREP,
                 ENM_BOT_ATK]
 
+PURPLE_FIST_MAN_SEQ = [ENM_TOP_PREP,
+                        ENM_TOP_ATK,
+                        ENM_BOT_PREP,
+                        ENM_BOT_ATK,
+                        ENM_IDLE,
+                        ENM_BOT_PREP,
+                        ENM_BOT_ATK,
+                        ENM_IDLE]
+
+HYDRA_SEQ = [ENM_IDLE,
+            ENM_TOP_PREP,
+            ENM_TOP_ATK]
+
+FREDERICK_SEQ = [ENM_IDLE]
+
 WINDOW_WIDTH = 1600
 WINDOW_HEIGHT = 900
+
+#   270 x 480 in graphics pixels

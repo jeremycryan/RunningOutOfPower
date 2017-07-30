@@ -16,6 +16,8 @@ class Sprite():
         self.scale = scale
         self.player = player
         self.is_enemy = is_enemy
+        self.frame_dict = {}
+        self.process_frames()
 
     def get_frame_rect(self, frame):
         framesize = (self.frame_width, self.frame_height)
@@ -26,22 +28,28 @@ class Sprite():
         self.render_frame(self.curr_frame, pos)
         if not halt:
             self.curr_frame += 1
-        if self.curr_frame > self.frame_num:
+        if self.curr_frame == self.frame_num + 1:
             if not self.is_enemy:
-                self.player.state = STATE_IDLE
+                self.player.anim = STATE_IDLE
             self.curr_frame = 1
 
+    def process_frames(self):
+        for i in range(0, self.frame_num):
+            surface = pygame.Surface((self.frame_width, self.frame_height)).convert_alpha()
+            surface.fill((0, 0, 255))
+            surface.set_alpha(127)
+            position = self.get_frame_rect(i)
+            surface.blit(self.source, (0, 0), position)
+            self.remove_trans(surface)
+            if self.frame_width > self.frame_height:
+                surface = pygame.transform.scale(surface, (int(self.scale * self.frame_width/float(self.frame_height)), self.scale))
+            else:
+                surface = pygame.transform.scale(surface, (self.scale, int(self.scale * self.frame_height/float(self.frame_width))))
+            self.frame_dict[i] = surface
+            self.frame_dict[i + 1] = surface
+
     def render_frame(self, frame, pos):
-        surface = pygame.Surface((self.frame_width, self.frame_height)).convert_alpha()
-        surface.fill((0, 0, 255))
-        surface.set_alpha(127)
-        position = self.get_frame_rect(frame)
-        surface.blit(self.source, (0, 0), position)
-        self.remove_trans(surface)
-        if self.frame_width > self.frame_height:
-            surface = pygame.transform.scale(surface, (int(self.scale * self.frame_width/float(self.frame_height)), self.scale))
-        else:
-            surface = pygame.transform.scale(surface, (self.scale, int(self.scale * self.frame_height/float(self.frame_width))))
+        surface = self.frame_dict[frame]
         self.screen.blit(surface, pos)
 
     def remove_trans(self, img):
