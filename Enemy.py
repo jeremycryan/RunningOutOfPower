@@ -6,6 +6,8 @@ class Enemy():
         self.attack_sequence = attack_sequence
         self.sprite_sequence = sprite_sequence
         self.state = 0
+        if self.name == "Purple fist man":
+            self.state = 4
         self.invulnerable = False
         self.pos = pos
         self.damage = damage

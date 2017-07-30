@@ -23,6 +23,8 @@ FIST_MAN_SEQ = [ENM_IDLE,
                 ENM_BOT_PREP,
                 ENM_BOT_ATK]
 
+
+
 PURPLE_FIST_MAN_SEQ = [ENM_TOP_PREP,
                         ENM_TOP_ATK,
                         ENM_BOT_PREP,
@@ -33,8 +35,20 @@ PURPLE_FIST_MAN_SEQ = [ENM_TOP_PREP,
                         ENM_IDLE]
 
 HYDRA_SEQ = [ENM_IDLE,
+            ENM_IDLE,
             ENM_TOP_PREP,
             ENM_TOP_ATK]
+
+PURPLE_HYDRA_SEQ = [ENM_IDLE,
+                    ENM_TOP_PREP,
+                    ENM_TOP_ATK,
+                    ENM_TOP_ATK,
+                    ENM_TOP_PREP,
+                    ENM_TOP_ATK,
+                    ENM_TOP_ATK,
+                    ENM_TOP_ATK]
+
+EMPTY_SEQ = [ENM_IDLE]
 
 FREDERICK_SEQ = [ENM_IDLE]
 

@@ -3,6 +3,7 @@ import math
 from Constants import *
 from Spritesheet import *
 from Enemy import *
+from copy import copy
 
 class Player():
     def __init__(self):
@@ -48,7 +49,8 @@ class Game():
         self.ATK_KEY = pygame.K_d
         self.CHARGE_KEY = pygame.K_a
 
-        self.enemy_list = self.generate_enemies()
+        self.enemy_list_source = self.generate_enemies()
+        self.enemy_list = copy(self.enemy_list_source)
 
         pygame.mixer.music.load(os.path.join('LD39.wav'))
         pygame.mixer.music.play(-1)
@@ -58,7 +60,7 @@ class Game():
         dif_from_beat_pos = 0
         has_pressed_button = True
         time_of_press = 0
-        self.time_ms = 550
+        self.time_ms = 0
         while is_running and len(self.enemy_list):
             self.time += 1
             current_enemy = self.enemy_list[0]
@@ -96,8 +98,18 @@ class Game():
             else:
                 jump_offset = 0
             if dif_from_beat_pos >= self.press_tolerance and last_dif < self.press_tolerance:
+                if self.player.power == 0:
+                    self.enemy_list = copy(self.enemy_list_source)
+                    for enemy in self.enemy_list:
+                        enemy.health = enemy.max_health
+                        if enemy.name == "Purple fist man":
+                            enemy.state = 4
+                        else:
+                            enemy.state = 0
+                    self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] + 200, current_enemy.pos[1]), 10)
+                    self.player.power = self.player.max_power
+
                 current_enemy.attack()
-                self.player.power = max(self.player.power - 5, 0)
                 if not has_pressed_button:
                     self.player.state = STATE_IDLE
                     self.player.anim = STATE_IDLE
@@ -127,15 +139,23 @@ class Game():
                     self.failed_gun_sound.play()
                 self.player.anim = self.player.state
                 has_pressed_button = False
+                if current_enemy.name == "Empty":
+                    current_enemy.health = max(0, current_enemy.health - 250)
 
             if current_enemy.health == 0:
                 self.enemy_list.remove(current_enemy)
-                self.player.power = self.player.max_power
+                if current_enemy.name == "Empty":
+                    self.player.power = self.player.max_power
+                else:
+                    self.enemy_defeat_sound.play()
                 self.disp.make_blip("Recharge", (self.player.pos[0] + 140, self.player.pos[1] + 40), 7)
-                self.disp.make_blip("Next opponent", (self.player.pos[0] - 20, self.player.pos[1] - 160), 7)
-                self.enemy_defeat_sound.play()
+                #self.disp.make_blip("Next opponent", (self.player.pos[0] - 20, self.player.pos[1] - 160), 7)
+                if current_enemy.name != "Frederick":
+                    self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] + 200, current_enemy.pos[1]), 10)
+                else:
+                    self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] - 120, current_enemy.pos[1] - 150), 10)
 
-            self.disp.render_instructions(current_enemy)
+            self.disp.render_instructions(self.enemy_list)
             self.disp.render_enemy_hp(current_enemy.health/current_enemy.max_health, current_enemy)
             self.disp.tic_enemy(current_enemy, current_enemy.pos, not self.is_time_for_next_frame())
             self.disp.render_energy_bar(self.player.power/self.player.max_power)
@@ -198,15 +218,31 @@ class Game():
                                 Sprite("PurpleFistmanBotAtk.png", (180, 120), 16, self.disp.screen, self.player, 400, is_enemy = True),
                                 Sprite("PurpleFistmanIdle.png", (180, 120), 4, self.disp.screen, self.player, 400, is_enemy = True)]
         HYDRA_SPRITE_SEQ = [Sprite("HydraIdle.png", (180, 120), 4, self.disp.screen, self.player, 400, is_enemy = True),
+                            Sprite("HydraIdle.png", (180, 120), 4, self.disp.screen, self.player, 400, is_enemy = True),
                             Sprite("HydraTopPrep.png", (180, 120), 4, self.disp.screen, self.player, 400, is_enemy = True),
-                            Sprite("HydraTopAtk.png", (180, 120), 15, self.disp.screen, self.player, 400, is_enemy = True)]
+                            Sprite("HydraTopAtkSimple.png", (180, 120), 16, self.disp.screen, self.player, 400, is_enemy = True)]
+        PURPLE_HYDRA_SPRITE_SEQ = [Sprite("PurpHydraIdle.png", (180, 120), 4, self.disp.screen, self.player, 400, is_enemy = True),
+                                Sprite("PurpHydraTopPrep.png", (180, 120), 4, self.disp.screen, self.player, 400, is_enemy = True),
+                                Sprite("PurpHydraTopAtk.png", (180, 120), 15, self.disp.screen, self.player, 400, is_enemy = True),
+                                Sprite("PurpHydraAltTopAtk.png", (180, 120), 16, self.disp.screen, self.player, 400, is_enemy = True),
+                                Sprite("PurpHydraTopPrep.png", (180, 120), 4, self.disp.screen, self.player, 400, is_enemy = True),
+                                Sprite("PurpHydraTopAtk.png", (180, 120), 15, self.disp.screen, self.player, 400, is_enemy = True),
+                                Sprite("PurpHydraAltTopAtkPrep.png", (180, 120), 16, self.disp.screen, self.player, 400, is_enemy = True),
+                                Sprite("PurpHydraTopAtkSimple.png", (180, 120), 15, self.disp.screen, self.player, 400, is_enemy = True)]
+        EMPTY_SPRITE_SEQ = [Sprite("EmptySprite.png", (180, 120), 1, self.disp.screen, self.player, 400, is_enemy = True)]
         enemy_list.append(Enemy("Frederick", FREDERICK_SEQ,
             FREDERICK_SPRITE_SEQ, (860, 450), 100, 300.0))
+        enemy_list.append(Enemy("Empty", EMPTY_SEQ, EMPTY_SPRITE_SEQ, (460, 250), 0, 1000.0))
         enemy_list.append(Enemy("Hydra", HYDRA_SEQ, HYDRA_SPRITE_SEQ, (520, 258), 60, 500.0))
+        enemy_list.append(Enemy("Empty", EMPTY_SEQ, EMPTY_SPRITE_SEQ, (460, 250), 0, 1000.0))
         enemy_list.append(Enemy("Fist man", FIST_MAN_SEQ,
-            FIST_MAN_SPRITE_SEQ, (460, 250), 100, 500.0))
+            FIST_MAN_SPRITE_SEQ, (460, 250), 80, 500.0))
+        enemy_list.append(Enemy("Empty", EMPTY_SEQ, EMPTY_SPRITE_SEQ, (460, 250), 0, 1000.0))
+        enemy_list.append(Enemy("Purple hydra", PURPLE_HYDRA_SEQ, PURPLE_HYDRA_SPRITE_SEQ, (520, 258), 100, 500.0))
+        enemy_list.append(Enemy("Empty", EMPTY_SEQ, EMPTY_SPRITE_SEQ, (460, 250), 0, 1000.0))
         enemy_list.append(Enemy("Purple fist man", PURPLE_FIST_MAN_SEQ,
             PURPLE_FIST_MAN_SPRITE_SEQ, (460, 250), 100, 800.0))
+        enemy_list.append(Enemy("Empty", EMPTY_SEQ, EMPTY_SPRITE_SEQ, (460, 250), 0, 1000.0))
         return enemy_list
 
 class Display():
@@ -238,6 +274,7 @@ class Display():
         self.recharge_blip = Sprite('+Energy.png', (160, 60), 7, self.screen, self.player, 75)
         self.damage_blip = Sprite('-100HP.png', (120, 60), 7, self.screen, self.player, 75)
         self.next_opponent_blip = Sprite('NextOpponent.png', (120, 60), 7, self.screen, self.player, 125)
+        self.puff_of_smoke_blip = Sprite('PuffOfSmoke.png', (120, 120), 10, self.screen, self.player, 400)
 
 
         self.energy_bar = pygame.image.load(os.path.join('EnergyBar.png')).convert_alpha()
@@ -273,7 +310,8 @@ class Display():
                         "Dodged": self.dodged_blip,
                         "Recharge": self.recharge_blip,
                         "Damage": self.damage_blip,
-                        "Next opponent": self.next_opponent_blip}
+                        "Next opponent": self.next_opponent_blip,
+                        "Puff of smoke": self.puff_of_smoke_blip}
 
     def render_energy_bar(self, energy_percent):
         dif = energy_percent - self.vis_energy_percent
@@ -292,15 +330,20 @@ class Display():
         surface = pygame.transform.scale(surface, (36, 96))
         self.screen.blit(surface, pos)
 
-    def render_instructions(self, current_enemy):
+    def render_instructions(self, enemy_list):
         pos = (280, 47)
-        if current_enemy.name == "Frederick":
+        curr_enemy = enemy_list[0]
+        if len(enemy_list) > 1:
+            next_enemy = enemy_list[1]
+        else:
+            next_enemy = cur_enemy
+        if "Frederick" in (curr_enemy.name, next_enemy.name):
             self.screen.blit(self.instructions_box, pos)
             self.screen.blit(self.instructions_1, pos)
-        elif current_enemy.name == "Hydra":
+        elif "Hydra" in (curr_enemy.name, next_enemy.name):
             self.screen.blit(self.instructions_box, pos)
             self.screen.blit(self.instructions_2, pos)
-        elif current_enemy.name == "Fist man":
+        elif "Fist man" in (curr_enemy.name, next_enemy.name):
             self.screen.blit(self.instructions_box, pos)
             self.screen.blit(self.instructions_3, pos)
 
@@ -324,7 +367,8 @@ class Display():
         surface.blit(self.energy_meter, (0, 0))
         surface.blit(bar_surface, (3, 3 + (18 - int(18.0 * self.vis_hp_percent))))
         surface = pygame.transform.scale(surface, (36, 96))
-        self.screen.blit(surface, pos)
+        if enemy.name != "Empty":
+            self.screen.blit(surface, pos)
 
     def render_blips(self, halt):
         for blip in self.blips:
