@@ -1,10 +1,11 @@
 import pygame
 import os
+import sys
 from Constants import *
 
 class Sprite():
     def __init__(self, file, framesize, frame_num, screen, player, scale, rev = False, is_enemy = False, enemy = None):
-        self.source = pygame.image.load(os.path.join(file)).convert_alpha()
+        self.source = pygame.image.load(resource_path(file)).convert_alpha()
         self.frame_width = framesize[0]
         self.frame_height = framesize[1]
         self.curr_frame = 1
@@ -59,3 +60,8 @@ class Sprite():
                 r, g, b, alpha = img.get_at((x, y))
                 if r < 50 and g < 50 and b > 200:
                     img.set_at((x, y), (r, g, b, 0))
+
+def resource_path(relative):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative)
+    return os.path.join(relative)
