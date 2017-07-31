@@ -322,6 +322,7 @@ class Display():
     def __init__(self, player):
         self.screen = pygame.Surface([WINDOW_WIDTH, WINDOW_HEIGHT])
         self.screen_commit = pygame.display.set_mode([WINDOW_WIDTH, WINDOW_HEIGHT])
+        pygame.display.toggle_fullscreen()
         self.loading_screen = pygame.image.load(os.path.join('LoadingScreen.png'))
         self.loading_screen = pygame.transform.scale(self.loading_screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
         self.screen_commit.blit(self.loading_screen, (0, 0))
