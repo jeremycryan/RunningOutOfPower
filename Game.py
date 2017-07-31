@@ -86,6 +86,7 @@ class Game():
                 if self.time_ms/1000.0 % beat_length < 0.5 * beat_length:
                     self.disp.render_space()
                 self.disp.render_blips(not self.is_time_for_next_frame())
+                self.disp.screen = pygame.transform.scale(self.disp.screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
                 self.disp.screen_commit.blit(self.disp.screen, (0, 0))
                 pygame.display.flip()
 
@@ -105,7 +106,7 @@ class Game():
             self.enemy_list = copy(self.enemy_list_source)
             for enemy in self.enemy_list:
                 enemy.health = enemy.max_health
-            print self.enemy_list
+            print(self.enemy_list)
             current_enemy = self.enemy_list[0]
             self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] - 100, current_enemy.pos[1] - 120), 10)
             while is_running and len(self.enemy_list):
@@ -216,6 +217,7 @@ class Game():
                 time_diff = self.clock.tick(self.disp.framerate)
                 self.time_ms += time_diff
                 #self.disp.screen = pygame.transform.scale(self.disp.screen, (int(WINDOW_WIDTH * self.disp.zoom), int(WINDOW_HEIGHT * self.disp.zoom)))
+                self.disp.screen = pygame.transform.scale(self.disp.screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
                 self.disp.screen_commit.blit(self.disp.screen, (0, 0))
                 pygame.display.flip()
 
