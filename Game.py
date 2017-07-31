@@ -53,7 +53,7 @@ class Game():
         self.enemy_list_source = self.generate_enemies()
         self.enemy_list = copy(self.enemy_list_source)
 
-        pygame.mixer.music.load(os.path.join('LD39.wav'))
+        pygame.mixer.music.load(resource_path('LD39.wav'))
         pygame.mixer.music.play(-1)
 
     def run(self):
@@ -86,8 +86,8 @@ class Game():
                 if self.time_ms/1000.0 % beat_length < 0.5 * beat_length:
                     self.disp.render_space()
                 self.disp.render_blips(not self.is_time_for_next_frame())
-                self.disp.screen = pygame.transform.scale(self.disp.screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
-                self.disp.screen_commit.blit(self.disp.screen, (0, 0))
+                temp_screen = pygame.transform.scale(self.disp.screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.disp.screen_commit.blit(temp_screen, (0, 0))
                 pygame.display.flip()
 
                 if button_pressed == "Enter" and not enter_impact:
@@ -217,8 +217,8 @@ class Game():
                 time_diff = self.clock.tick(self.disp.framerate)
                 self.time_ms += time_diff
                 #self.disp.screen = pygame.transform.scale(self.disp.screen, (int(WINDOW_WIDTH * self.disp.zoom), int(WINDOW_HEIGHT * self.disp.zoom)))
-                self.disp.screen = pygame.transform.scale(self.disp.screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
-                self.disp.screen_commit.blit(self.disp.screen, (0, 0))
+                temp_screen = pygame.transform.scale(self.disp.screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.disp.screen_commit.blit(temp_screen, (0, 0))
                 pygame.display.flip()
 
             has_pressed_space = False
@@ -322,7 +322,7 @@ class Display():
     def __init__(self, player):
         self.screen = pygame.Surface([WINDOW_WIDTH, WINDOW_HEIGHT])
         self.screen_commit = pygame.display.set_mode([WINDOW_WIDTH, WINDOW_HEIGHT])
-        self.loading_screen = pygame.image.load(os.path.join('LoadingScreen.png'))
+        self.loading_screen = pygame.image.load(resource_path('LoadingScreen.png'))
         self.loading_screen = pygame.transform.scale(self.loading_screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
         self.screen_commit.blit(self.loading_screen, (0, 0))
         pygame.display.flip()
@@ -350,29 +350,29 @@ class Display():
         self.puff_of_smoke_blip = Sprite('PuffOfSmoke.png', (120, 120), 10, self.screen, self.player, 400)
         self.beat_blip = Sprite('Beat.png', (120, 60), 7, self.screen, self.player, 90)
 
-        self.energy_bar = pygame.image.load(os.path.join('EnergyBar.png')).convert_alpha()
-        self.energy_meter = pygame.image.load(os.path.join('EnergyMeter.png')).convert_alpha()
-        self.backdrop = pygame.image.load(os.path.join("Backdropv1.png"))
-        self.backdrop_lit = pygame.image.load(os.path.join("Backdropv2.png"))
-        self.victory_screen = pygame.image.load(os.path.join("VictoryScreen.png"))
+        self.energy_bar = pygame.image.load(resource_path('EnergyBar.png')).convert_alpha()
+        self.energy_meter = pygame.image.load(resource_path('EnergyMeter.png')).convert_alpha()
+        self.backdrop = pygame.image.load(resource_path("Backdropv1.png"))
+        self.backdrop_lit = pygame.image.load(resource_path("Backdropv2.png"))
+        self.victory_screen = pygame.image.load(resource_path("VictoryScreen.png"))
         self.backdrop = pygame.transform.scale(self.backdrop, (1600, 900))
         self.backdrop_lit = pygame.transform.scale(self.backdrop_lit, (1600, 900))
         self.victory_screen = pygame.transform.scale(self.victory_screen, (1600, 900))
         self.vis_energy_percent = 1.0
         self.vis_hp_percent = 1.0
 
-        self.instructions_box = pygame.image.load(os.path.join('InstructionsBox.png')).convert_alpha()
+        self.instructions_box = pygame.image.load(resource_path('InstructionsBox.png')).convert_alpha()
         change_alpha(self.instructions_box, 40, False)
-        self.instructions_1 = pygame.image.load(os.path.join('Instructions1.png')).convert_alpha()
-        self.instructions_2 = pygame.image.load(os.path.join('Instructions2.png')).convert_alpha()
-        self.instructions_3 = pygame.image.load(os.path.join('Instructions3.png')).convert_alpha()
+        self.instructions_1 = pygame.image.load(resource_path('Instructions1.png')).convert_alpha()
+        self.instructions_2 = pygame.image.load(resource_path('Instructions2.png')).convert_alpha()
+        self.instructions_3 = pygame.image.load(resource_path('Instructions3.png')).convert_alpha()
         self.instructions_box = pygame.transform.scale(self.instructions_box, (997, 347))
         self.instructions_1 = pygame.transform.scale(self.instructions_1, (997, 347))
         self.instructions_2 = pygame.transform.scale(self.instructions_2, (997, 347))
         self.instructions_3 = pygame.transform.scale(self.instructions_3, (997, 347))
-        self.logo = pygame.image.load(os.path.join('Logo.png')).convert_alpha()
+        self.logo = pygame.image.load(resource_path('Logo.png')).convert_alpha()
         self.logo = pygame.transform.scale(self.logo, (800, 533))
-        self.space_to_start = pygame.image.load(os.path.join('PressSpace.png')).convert_alpha()
+        self.space_to_start = pygame.image.load(resource_path('PressSpace.png')).convert_alpha()
         self.space_to_start = pygame.transform.scale(self.space_to_start, (940, 85))
 
         self.enemy_cur_anim = self.idle_sprite
@@ -490,6 +490,11 @@ def change_alpha(img, alpha=255, redden = True): #   change opacity of img to al
                 prop = (1 - (alpha + 100)/600.0)
                 g, b = prop*g, prop*b
             img.set_at((x,y),(r,g,b,alpha/255.0*float(old_alpha)))
+
+def resource_path(relative):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative)
+    return os.path.join(relative)
 
 if __name__ == "__main__":
     game = Game()
