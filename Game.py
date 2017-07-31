@@ -1,5 +1,6 @@
 import pygame
 import math
+import sys
 from Constants import *
 from Spritesheet import *
 from Enemy import *
@@ -57,115 +58,183 @@ class Game():
 
     def run(self):
         is_running = 1
-        dif_from_beat_pos = 0
-        has_pressed_button = True
-        time_of_press = 0
-        self.time_ms = 0
-        while is_running and len(self.enemy_list):
-            self.time += 1
+        while is_running:
+            dif_from_beat_pos = 0
+            has_pressed_button = True
+            time_of_press = 0
+            self.time_ms = 0
+            self.true_time = 0
+            hasnt_started = True
+            beats = 0
+            enter_impact = False
+            while is_running and beats < 4:
+                pygame.event.pump()
+                button_pressed = self.det_button_pressed()
+                beat_length = 60.0/self.BPM
+                time_since_beat = self.time_ms/1000.0 % beat_length
+                self.time +=1
+                self.true_time += 1
+                if beats % 2 == 0:
+                    self.disp.screen.blit(self.disp.backdrop, (0, 0))
+                else:
+                    self.disp.screen.blit(self.disp.backdrop_lit, (0, 0))
+                time_diff = self.clock.tick(self.disp.framerate)
+                self.time_ms += time_diff
+                title_y_offset = 15 * math.sin(self.true_time/15.0) + 25
+                self.disp.render_logo(title_y_offset)
+                self.disp.make_tic(self.player, [self.player.pos[0], self.player.pos[1]], not self.is_time_for_next_frame())
+                if self.time_ms/1000.0 % beat_length < 0.5 * beat_length:
+                    self.disp.render_space()
+                self.disp.render_blips(not self.is_time_for_next_frame())
+                self.disp.screen_commit.blit(self.disp.screen, (0, 0))
+                pygame.display.flip()
+
+                if button_pressed == "Enter" and not enter_impact:
+                    enter_impact = True
+                    beats += 1
+                    #self.disp.make_blip("Beat", (self.player.pos[0] + 120, self.player.pos[1] + 70), 7)
+                if button_pressed != "Enter":
+                    enter_impact = False
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.display.quit()
+                        pygame.quit()
+                        sys.exit()
+            self.time = 0
+            self.time_ms = 150
+            self.enemy_list = copy(self.enemy_list_source)
+            for enemy in self.enemy_list:
+                enemy.health = enemy.max_health
+            print self.enemy_list
             current_enemy = self.enemy_list[0]
-            pygame.event.pump()
-            self.sec = self.time/self.disp.framerate
-            beat_length = 60.0/self.BPM
-            time_since_beat = self.time_ms/1000.0 % beat_length
-            if time_since_beat == self.time_ms/1000.0 % (beat_length * 2):
-                self.disp.screen.blit(self.disp.backdrop, (0, 0))
-            else:
-                self.disp.screen.blit(self.disp.backdrop_lit, (0, 0))
-            button_pressed = self.det_button_pressed()
-            if button_pressed != "False" and self.is_in_press_window() and not has_pressed_button:
-                self.player.state = button_pressed
-                self.player.anim = button_pressed
-                self.disp.sprite_dict[self.player.anim].curr_frame = 1
-                has_pressed_button = True
-                if self.time_ms/1000.0 - time_of_press > 2 * self.press_tolerance:
-                    time_of_press = self.time_ms / 1000.0
-            last_dif = dif_from_beat_pos
-            dif_from_beat_pos = (self.time_ms / 1000.0) % (60.0/self.BPM)
-            time_since_press = (self.time_ms/1000.0 - time_of_press)
-            self.disp.energy_bar_y_offset = math.sin(time_since_beat * 40) / ((time_since_beat + 0.37) ** 2)
-            if self.player.state == STATE_JUMP:
-                prop = time_since_press / (1.0/self.BPM * 60.0) * 4.0
-                try:
-                    if prop < 0.5:
-                        jump_offset = prop ** 0.3 * 180
-                    else:
-                        jump_offset = (1 - prop) ** 0.3 * 180
-                except:
-                    jump_offset = 0
-                if jump_offset < 0:
-                    jump_offset = 0
-            else:
-                jump_offset = 0
-            if dif_from_beat_pos >= self.press_tolerance and last_dif < self.press_tolerance:
-                if self.player.power == 0:
-                    self.enemy_list = copy(self.enemy_list_source)
-                    for enemy in self.enemy_list:
-                        enemy.health = enemy.max_health
-                        if enemy.name == "Purple fist man":
-                            enemy.state = 4
+            self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] - 100, current_enemy.pos[1] - 120), 10)
+            while is_running and len(self.enemy_list):
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.display.quit()
+                        pygame.quit()
+                        sys.exit()
+                self.time += 1
+                self.true_time += 1
+                current_enemy = self.enemy_list[0]
+                pygame.event.pump()
+                self.sec = self.time/self.disp.framerate
+                beat_length = 60.0/self.BPM
+                time_since_beat = self.time_ms/1000.0 % beat_length
+                if time_since_beat == self.time_ms/1000.0 % (beat_length * 2):
+                    self.disp.screen.blit(self.disp.backdrop, (0, 0))
+                else:
+                    self.disp.screen.blit(self.disp.backdrop_lit, (0, 0))
+                button_pressed = self.det_button_pressed()
+                if button_pressed not in ["False", "Enter"] and self.is_in_press_window() and not has_pressed_button:
+                    self.player.state = button_pressed
+                    self.player.anim = button_pressed
+                    self.disp.sprite_dict[self.player.anim].curr_frame = 1
+                    has_pressed_button = True
+                    if self.time_ms/1000.0 - time_of_press > 2 * self.press_tolerance:
+                        time_of_press = self.time_ms / 1000.0
+                last_dif = dif_from_beat_pos
+                dif_from_beat_pos = (self.time_ms / 1000.0) % (60.0/self.BPM)
+                time_since_press = (self.time_ms/1000.0 - time_of_press)
+                self.disp.energy_bar_y_offset = math.sin(time_since_beat * 40) / ((time_since_beat + 0.37) ** 2)
+                if self.player.state == STATE_JUMP:
+                    prop = time_since_press / (1.0/self.BPM * 60.0) * 4.0
+                    try:
+                        if prop < 0.5:
+                            jump_offset = prop ** 0.3 * 180
                         else:
-                            enemy.state = 0
-                    self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] + 200, current_enemy.pos[1]), 10)
-                    self.player.power = self.player.max_power
+                            jump_offset = (1 - prop) ** 0.3 * 180
+                    except:
+                        jump_offset = 0
+                    if jump_offset < 0:
+                        jump_offset = 0
+                else:
+                    jump_offset = 0
+                if dif_from_beat_pos >= self.press_tolerance and last_dif < self.press_tolerance:
+                    if self.player.power == 0:
+                        self.enemy_list = copy(self.enemy_list_source)
+                        for enemy in self.enemy_list:
+                            enemy.health = enemy.max_health
+                            if enemy.name == "Purple fist man":
+                                enemy.state = 4
+                            else:
+                                enemy.state = 0
+                        self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] + 200, current_enemy.pos[1]), 10)
+                        self.player.power = self.player.max_power
 
-                current_enemy.attack()
-                if not has_pressed_button:
-                    self.player.state = STATE_IDLE
-                    self.player.anim = STATE_IDLE
-                if self.player.state == STATE_BLK and current_enemy.attack_sequence[current_enemy.state] == ENM_TOP_ATK:
-                    self.disp.make_blip("Blocked", (self.player.pos[0] + 160, self.player.pos[1] + 40), 7)
-                    self.block_sound.play()
-                if self.player.state == STATE_CHG and not current_enemy.invulnerable:
+                    current_enemy.attack()
+                    if not has_pressed_button:
+                        self.player.state = STATE_IDLE
+                        self.player.anim = STATE_IDLE
+                    if self.player.state == STATE_BLK and current_enemy.attack_sequence[current_enemy.state] == ENM_TOP_ATK:
+                        self.disp.make_blip("Blocked", (self.player.pos[0] + 160, self.player.pos[1] + 40), 7)
+                        self.block_sound.play()
+                    if self.player.state == STATE_CHG and not current_enemy.invulnerable:
+                        self.disp.make_blip("Recharge", (self.player.pos[0] + 140, self.player.pos[1] + 40), 7)
+                        self.player.power = min(self.player.power + 45 - 25 * self.player.power/self.player.max_power, self.player.max_power)
+                        self.recharge_sound.play()
+                    if self.player.state == STATE_JUMP and current_enemy.attack_sequence[current_enemy.state] == ENM_BOT_ATK:
+                        self.disp.make_blip("Dodged", (self.player.pos[0] + 160, self.player.pos[1] + 40), 7)
+                        self.dodge_sound.play()
+                    if (current_enemy.attack_sequence[current_enemy.state] == ENM_BOT_ATK and self.player.state != STATE_JUMP) or \
+                            (current_enemy.attack_sequence[current_enemy.state] == ENM_TOP_ATK and self.player.state != STATE_BLK):
+                        self.player.take_damage(current_enemy.damage)
+                        self.disp.make_blip("Damage", (self.player.pos[0] + 70, self.player.pos[1] + 70), 7)
+                        self.player.state = STATE_DAMAGED
+                        self.player.anim = STATE_DAMAGED
+                        self.damage_sound.play()
+                    if not current_enemy.invulnerable and self.player.state == STATE_ATK:
+                        self.player.fire_weapon()
+                        current_enemy.health = max(0, current_enemy.health - self.player.weapon_damage)
+                        self.gun_sound.play()
+                    if self.player.state == STATE_FAIL_ATK:
+                        self.failed_gun_sound.play()
+                    self.player.anim = self.player.state
+                    has_pressed_button = False
+                    if current_enemy.name == "Empty":
+                        current_enemy.health = max(0, current_enemy.health - 250)
+
+                if current_enemy.health == 0:
+                    self.enemy_list.remove(current_enemy)
+                    if current_enemy.name == "Empty":
+                        self.player.power = self.player.max_power
+                    else:
+                        self.enemy_defeat_sound.play()
                     self.disp.make_blip("Recharge", (self.player.pos[0] + 140, self.player.pos[1] + 40), 7)
-                    self.player.power = min(self.player.power + 45 - 25 * self.player.power/self.player.max_power, self.player.max_power)
-                    self.recharge_sound.play()
-                if self.player.state == STATE_JUMP and current_enemy.attack_sequence[current_enemy.state] == ENM_BOT_ATK:
-                    self.disp.make_blip("Dodged", (self.player.pos[0] + 160, self.player.pos[1] + 40), 7)
-                    self.dodge_sound.play()
-                if (current_enemy.attack_sequence[current_enemy.state] == ENM_BOT_ATK and self.player.state != STATE_JUMP) or \
-                        (current_enemy.attack_sequence[current_enemy.state] == ENM_TOP_ATK and self.player.state != STATE_BLK):
-                    self.player.take_damage(current_enemy.damage)
-                    self.disp.make_blip("Damage", (self.player.pos[0] + 70, self.player.pos[1] + 70), 7)
-                    self.player.state = STATE_DAMAGED
-                    self.player.anim = STATE_DAMAGED
-                    self.damage_sound.play()
-                if not current_enemy.invulnerable and self.player.state == STATE_ATK:
-                    self.player.fire_weapon()
-                    current_enemy.health = max(0, current_enemy.health - self.player.weapon_damage)
-                    self.gun_sound.play()
-                    print(current_enemy.health)
-                if self.player.state == STATE_FAIL_ATK:
-                    self.failed_gun_sound.play()
-                self.player.anim = self.player.state
-                has_pressed_button = False
-                if current_enemy.name == "Empty":
-                    current_enemy.health = max(0, current_enemy.health - 250)
+                    #self.disp.make_blip("Next opponent", (self.player.pos[0] - 20, self.player.pos[1] - 160), 7)
+                    if current_enemy.name != "Frederick":
+                        self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] + 200, current_enemy.pos[1]), 10)
+                    else:
+                        self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] - 120, current_enemy.pos[1] - 150), 10)
 
-            if current_enemy.health == 0:
-                self.enemy_list.remove(current_enemy)
-                if current_enemy.name == "Empty":
-                    self.player.power = self.player.max_power
-                else:
-                    self.enemy_defeat_sound.play()
-                self.disp.make_blip("Recharge", (self.player.pos[0] + 140, self.player.pos[1] + 40), 7)
-                #self.disp.make_blip("Next opponent", (self.player.pos[0] - 20, self.player.pos[1] - 160), 7)
-                if current_enemy.name != "Frederick":
-                    self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] + 200, current_enemy.pos[1]), 10)
-                else:
-                    self.disp.make_blip("Puff of smoke", (current_enemy.pos[0] - 120, current_enemy.pos[1] - 150), 10)
+                self.disp.render_instructions(self.enemy_list)
+                self.disp.render_enemy_hp(current_enemy.health/current_enemy.max_health, current_enemy)
+                self.disp.tic_enemy(current_enemy, current_enemy.pos, not self.is_time_for_next_frame())
+                self.disp.render_energy_bar(self.player.power/self.player.max_power)
+                self.disp.make_tic(self.player, [self.player.pos[0], self.player.pos[1] - jump_offset], not self.is_time_for_next_frame())
+                self.disp.render_blips(not self.is_time_for_next_frame())
+                time_diff = self.clock.tick(self.disp.framerate)
+                self.time_ms += time_diff
+                #self.disp.screen = pygame.transform.scale(self.disp.screen, (int(WINDOW_WIDTH * self.disp.zoom), int(WINDOW_HEIGHT * self.disp.zoom)))
+                self.disp.screen_commit.blit(self.disp.screen, (0, 0))
+                pygame.display.flip()
 
-            self.disp.render_instructions(self.enemy_list)
-            self.disp.render_enemy_hp(current_enemy.health/current_enemy.max_health, current_enemy)
-            self.disp.tic_enemy(current_enemy, current_enemy.pos, not self.is_time_for_next_frame())
-            self.disp.render_energy_bar(self.player.power/self.player.max_power)
-            self.disp.make_tic(self.player, [self.player.pos[0], self.player.pos[1] - jump_offset], not self.is_time_for_next_frame())
-            self.disp.render_blips(not self.is_time_for_next_frame())
-            time_diff = self.clock.tick(self.disp.framerate)
-            self.time_ms += time_diff
-            #self.disp.screen = pygame.transform.scale(self.disp.screen, (int(WINDOW_WIDTH * self.disp.zoom), int(WINDOW_HEIGHT * self.disp.zoom)))
-            self.disp.screen_commit.blit(self.disp.screen, (0, 0))
-            pygame.display.flip()
+            has_pressed_space = False
+            while has_pressed_space == False:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.display.quit()
+                        pygame.quit()
+                        sys.exit()
+                self.disp.screen.blit(self.disp.victory_screen, (0, 0))
+                self.disp.screen_commit.blit(self.disp.screen, (0, 0))
+                pygame.display.flip()
+                pygame.event.pump()
+                button_pressed = self.det_button_pressed()
+                if button_pressed == "Enter":
+                    has_pressed_space = True
+                time_diff = self.clock.tick(self.disp.framerate)
+
 
     def det_button_pressed(self):
         pressed = pygame.key.get_pressed()
@@ -184,6 +253,8 @@ class Game():
             return STATE_BLK
         elif charge_pressed:
             return STATE_CHG
+        elif pressed[pygame.K_SPACE]:
+            return "Enter"
         else:
             return "False"
 
@@ -253,7 +324,7 @@ class Display():
         self.loading_screen = pygame.transform.scale(self.loading_screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
         self.screen_commit.blit(self.loading_screen, (0, 0))
         pygame.display.flip()
-        pygame.display.set_caption("POWER LEVEL 9000+")
+        pygame.display.set_caption("Mountaintop Groovy Robot Laser Battle")
         self.framerate = 30.0
         self.anim_framerate = 12.0
         self.player = player
@@ -275,14 +346,16 @@ class Display():
         self.damage_blip = Sprite('-100HP.png', (120, 60), 7, self.screen, self.player, 75)
         self.next_opponent_blip = Sprite('NextOpponent.png', (120, 60), 7, self.screen, self.player, 125)
         self.puff_of_smoke_blip = Sprite('PuffOfSmoke.png', (120, 120), 10, self.screen, self.player, 400)
-
+        self.beat_blip = Sprite('Beat.png', (120, 60), 7, self.screen, self.player, 90)
 
         self.energy_bar = pygame.image.load(os.path.join('EnergyBar.png')).convert_alpha()
         self.energy_meter = pygame.image.load(os.path.join('EnergyMeter.png')).convert_alpha()
         self.backdrop = pygame.image.load(os.path.join("Backdropv1.png"))
         self.backdrop_lit = pygame.image.load(os.path.join("Backdropv2.png"))
+        self.victory_screen = pygame.image.load(os.path.join("VictoryScreen.png"))
         self.backdrop = pygame.transform.scale(self.backdrop, (1600, 900))
         self.backdrop_lit = pygame.transform.scale(self.backdrop_lit, (1600, 900))
+        self.victory_screen = pygame.transform.scale(self.victory_screen, (1600, 900))
         self.vis_energy_percent = 1.0
         self.vis_hp_percent = 1.0
 
@@ -295,6 +368,10 @@ class Display():
         self.instructions_1 = pygame.transform.scale(self.instructions_1, (997, 347))
         self.instructions_2 = pygame.transform.scale(self.instructions_2, (997, 347))
         self.instructions_3 = pygame.transform.scale(self.instructions_3, (997, 347))
+        self.logo = pygame.image.load(os.path.join('Logo.png')).convert_alpha()
+        self.logo = pygame.transform.scale(self.logo, (800, 533))
+        self.space_to_start = pygame.image.load(os.path.join('PressSpace.png')).convert_alpha()
+        self.space_to_start = pygame.transform.scale(self.space_to_start, (940, 85))
 
         self.enemy_cur_anim = self.idle_sprite
 
@@ -311,7 +388,8 @@ class Display():
                         "Recharge": self.recharge_blip,
                         "Damage": self.damage_blip,
                         "Next opponent": self.next_opponent_blip,
-                        "Puff of smoke": self.puff_of_smoke_blip}
+                        "Puff of smoke": self.puff_of_smoke_blip,
+                        "Beat": self.beat_blip}
 
     def render_energy_bar(self, energy_percent):
         dif = energy_percent - self.vis_energy_percent
@@ -330,22 +408,29 @@ class Display():
         surface = pygame.transform.scale(surface, (36, 96))
         self.screen.blit(surface, pos)
 
+    def render_space(self):
+        self.screen.blit(self.space_to_start, (320, WINDOW_HEIGHT - 110))
+
     def render_instructions(self, enemy_list):
         pos = (280, 47)
-        curr_enemy = enemy_list[0]
-        if len(enemy_list) > 1:
-            next_enemy = enemy_list[1]
-        else:
-            next_enemy = cur_enemy
-        if "Frederick" in (curr_enemy.name, next_enemy.name):
-            self.screen.blit(self.instructions_box, pos)
-            self.screen.blit(self.instructions_1, pos)
-        elif "Hydra" in (curr_enemy.name, next_enemy.name):
-            self.screen.blit(self.instructions_box, pos)
-            self.screen.blit(self.instructions_2, pos)
-        elif "Fist man" in (curr_enemy.name, next_enemy.name):
-            self.screen.blit(self.instructions_box, pos)
-            self.screen.blit(self.instructions_3, pos)
+        if len(enemy_list):
+            curr_enemy = enemy_list[0]
+            if len(enemy_list) > 1:
+                next_enemy = enemy_list[1]
+            else:
+                next_enemy = curr_enemy
+            if "Frederick" in (curr_enemy.name, next_enemy.name):
+                self.screen.blit(self.instructions_box, pos)
+                self.screen.blit(self.instructions_1, pos)
+            elif "Hydra" in (curr_enemy.name, next_enemy.name):
+                self.screen.blit(self.instructions_box, pos)
+                self.screen.blit(self.instructions_2, pos)
+            elif "Fist man" in (curr_enemy.name, next_enemy.name):
+                self.screen.blit(self.instructions_box, pos)
+                self.screen.blit(self.instructions_3, pos)
+
+    def render_logo(self, y_offset):
+        self.screen.blit(self.logo, (380, 47 + y_offset))
 
     def render_enemy_hp(self, hp_percent, enemy):
         dif = hp_percent - self.vis_hp_percent
